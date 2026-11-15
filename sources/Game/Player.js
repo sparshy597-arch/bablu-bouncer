@@ -350,12 +350,31 @@ export class Player
     setUnstuck()
     {
         this.unstuck = {}
-        this.unstuck.duration = 3
+        this.unstuck.duration = 1.6
         this.unstuck.delay = null
+        this.unstuck.autoPopDelay = null
+
+        // UI Button trigger on screen
+        this.unstuckButton = document.querySelector('.js-unstuck-trigger')
+        if(this.unstuckButton)
+        {
+            this.unstuckButton.addEventListener('click', () =>
+            {
+                this.quickUnstuck()
+            })
+        }
+
+        // Dedicated 'R' Key listener for instant un-wedging/flipping
+        window.addEventListener('keydown', (e) =>
+        {
+            if((e.key === 'r' || e.key === 'R') && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName))
+            {
+                this.quickUnstuck()
+            }
+        })
 
         this.game.physicalVehicle.events.on('rightSideUp', () =>
         {
-            // Reset delay
             if(this.unstuck.delay)
                 this.unstuck.delay.kill()
         })
@@ -369,52 +388,129 @@ export class Player
                 if(this.state !== Player.STATE_DEFAULT)
                     return
 
-                // Still upside down => Flip back
-                if(this.game.physicalVehicle.upsideDown.active)
+                // Still upside down or tilted on side => Pop upright
+                if(this.game.physicalVehicle.upsideDown.active || Math.abs(this.game.physicalVehicle.upward.y) < 0.65)
                 {
-                    this.game.physicalVehicle.flip.jump()
-                    
-                    // Sound
-                    this.sounds.suspensions.play(4)
-
-                    // Achievement
-                    if(this.game.physicalVehicle.upsideDown.ratio > 0.75)
-                    {
-                        this.game.achievements.setProgress('upsideDown', 1)
-                        this.game.achievements.addProgress('bounceUnstuck', 1)
-                    }
-
-                    // Again in case it didn't work
+                    this.quickUnstuck()
                     waitAndTest()
                 }
             })
         }
 
-        this.game.physicalVehicle.events.on('upsideDown', (ratio) =>
+        this.game.physicalVehicle.events.on('upsideDown', () =>
         {
-            // Reset delay
             if(this.unstuck.delay)
                 this.unstuck.delay.kill()
 
-            // Wait a moment
             waitAndTest()
         })
 
         this.game.physicalVehicle.events.on('stuck', () =>
         {
+            if(this.unstuckButton)
+                this.unstuckButton.classList.add('is-stuck-alert')
+
             this.game.inputs.interactiveButtons.addItems(['unstuck'])
+
+            // Auto bounce pop after 1.4s if vehicle is stuck against ramp or wall
+            if(!this.unstuck.autoPopDelay)
+            {
+                this.unstuck.autoPopDelay = gsap.delayedCall(1.4, () =>
+                {
+                    this.unstuck.autoPopDelay = null
+                    if(this.game.physicalVehicle.stuck.active)
+                    {
+                        this.quickUnstuck()
+                    }
+                })
+            }
         })
 
         this.game.physicalVehicle.events.on('unstuck', () =>
         {
+            if(this.unstuckButton)
+                this.unstuckButton.classList.remove('is-stuck-alert')
+
             this.game.inputs.interactiveButtons.removeItems(['unstuck'])
+
+            if(this.unstuck.autoPopDelay)
+            {
+                this.unstuck.autoPopDelay.kill()
+                this.unstuck.autoPopDelay = null
+            }
         })
 
         this.game.inputs.interactiveButtons.events.on('unstuck', () =>
         {
             this.game.inputs.interactiveButtons.removeItems(['unstuck'])
-            this.respawn()
+            this.quickUnstuck()
         })
+    }
+
+    quickUnstuck()
+    {
+        if(this.state !== Player.STATE_DEFAULT)
+            return
+
+        const pv = this.game.physicalVehicle
+        if(!pv || !pv.chassis || !pv.chassis.physical)
+            return
+
+        const body = pv.chassis.physical.body
+        const pos = body.translation()
+
+        // Zero out velocities to kill wedging inertia
+        body.setLinvel({ x: 0, y: 0, z: 0 })
+        body.setAngvel({ x: 0, y: 0, z: 0 })
+
+        // Extract horizontal yaw angle and reset pitch/roll to 0 (level)
+        const euler = new THREE.Euler().setFromQuaternion(pv.quaternion, 'YXZ')
+        const levelQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, euler.y, 0))
+        body.setRotation(levelQuat)
+
+        // Nudge 1.3m upward and 1.2m backward away from any wall or ramp
+        const forwardVector = new THREE.Vector3(1, 0, 0).applyQuaternion(levelQuat)
+        const newX = pos.x - forwardVector.x * 1.2
+        const newZ = pos.z - forwardVector.z * 1.2
+        const newY = Math.max(pos.y + 1.35, 1.2)
+
+        body.setTranslation({ x: newX, y: newY, z: newZ })
+        body.wakeUp()
+
+        // Apply a crisp upward impulse
+        const popImpulse = new THREE.Vector3(0, 4.5 * pv.chassis.mass, 0)
+        body.applyImpulse(popImpulse)
+
+        // Sound & achievement
+        if(this.sounds?.suspensions)
+            this.sounds.suspensions.play(4)
+        if(this.sounds?.spring1)
+            this.sounds.spring1.play(3)
+
+        this.game.achievements?.addProgress('bounceUnstuck', 1)
+
+        this.showUnstuckToast()
+    }
+
+    showUnstuckToast()
+    {
+        let toast = document.querySelector('.js-unstuck-toast')
+        if(!toast)
+        {
+            toast = document.createElement('div')
+            toast.className = 'js-unstuck-toast unstuck-toast'
+            toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,0.92);color:#fff;padding:8px 18px;border-radius:24px;font-weight:700;font-size:14px;letter-spacing:1px;pointer-events:none;z-index:99999;box-shadow:0 4px 18px rgba(0,0,0,0.4);opacity:0;transition:opacity 0.25s, transform 0.25s;'
+            document.body.appendChild(toast)
+        }
+        toast.innerHTML = '🚀 <strong>BOUNCE UNSTUCK!</strong> Car flipped upright!'
+        toast.style.opacity = '1'
+        toast.style.transform = 'translateX(-50%) translateY(0)'
+        clearTimeout(this.unstuckToastTimeout)
+        this.unstuckToastTimeout = setTimeout(() =>
+        {
+            toast.style.opacity = '0'
+            toast.style.transform = 'translateX(-50%) translateY(10px)'
+        }, 1800)
     }
 
     // setBackWheel()
@@ -709,6 +805,13 @@ export class Player
         // Position
         this.position.copy(this.game.physicalVehicle.position)
         this.position2 = new THREE.Vector2(this.position.x, this.position.z)
+        
+        // Out-of-bounds abyss fall protection
+        if(this.position.y < -3.0 && this.state === Player.STATE_DEFAULT)
+        {
+            this.respawn()
+            return
+        }
         
         // View > Focus point
         this.game.view.focusPoint.trackedPosition.copy(this.position)

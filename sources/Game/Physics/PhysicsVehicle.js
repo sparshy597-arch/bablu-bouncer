@@ -90,12 +90,13 @@ export class PhysicsVehicle
         const object = this.game.objects.add(null, {
             type: 'dynamic',
             position: this.position,
-            friction: 0.4,
+            friction: 0.04, // Low friction on chassis body so vehicle slides smoothly off obstacles without wedging
+            restitution: 0.15, // Gentle bounce off impacts to prevent getting stuck
             rotation: new THREE.Quaternion().setFromAxisAngle(new THREE.Euler(0, 1, 0), Math.PI * 0),
             colliders: [
-                { shape: 'cuboid', mass: 2.5, parameters: [ 1.3, 0.4, 0.85 ], position: { x: 0, y: -0.1, z: 0 }, centerOfMass: { x: 0, y: -0.5, z: 0 } }, // Main
-                { shape: 'cuboid', mass: 0, parameters: [ 0.5, 0.15, 0.65 ], position: { x: 0, y: 0.4, z: 0 } }, // Top
-                { shape: 'cuboid', mass: 0, parameters: [ 1.5, 0.5, 0.9 ], position: { x: 0.1, y: -0.2, z: 0 }, category: 'bumper' }, // Bumper
+                { shape: 'cuboid', mass: 2.5, parameters: [ 1.25, 0.28, 0.8 ], position: { x: 0, y: 0.06, z: 0 }, centerOfMass: { x: 0, y: -0.45, z: 0 } }, // Main body elevated with high clearance
+                { shape: 'cuboid', mass: 0, parameters: [ 0.5, 0.15, 0.65 ], position: { x: 0, y: 0.42, z: 0 } }, // Top cabin
+                { shape: 'cuboid', mass: 0, parameters: [ 1.35, 0.26, 0.82 ], position: { x: 0.05, y: 0.08, z: 0 }, category: 'bumper' }, // Bumper with raised bottom so it never digs into ramps/ground
             ],
             canSleep: false,
             waterGravityMultiplier: 0,
@@ -262,11 +263,11 @@ export class PhysicsVehicle
     setStuck()
     {
         this.stuck = {}
-        this.stuck.durationTest = 3
+        this.stuck.durationTest = 1.2
         this.stuck.durationSaved = 0
         this.stuck.savedItems = []
         this.stuck.distance = 0
-        this.stuck.distanceThreshold = 0.5
+        this.stuck.distanceThreshold = 0.6
         this.stuck.active = false
 
         this.stuck.accumulate = (traveled, time) =>
@@ -294,7 +295,10 @@ export class PhysicsVehicle
 
         this.stuck.test = () =>
         {
-            if(this.stuck.durationSaved >= this.stuck.durationTest && this.stuck.distance < this.stuck.distanceThreshold)
+            const isTiltedWedged = Math.abs(this.upward.y) < 0.65
+            const isStuckMoving = this.stuck.durationSaved >= this.stuck.durationTest && this.stuck.distance < this.stuck.distanceThreshold
+
+            if(isStuckMoving || (isTiltedWedged && this.stuck.durationSaved >= 1.0))
             {
                 if(!this.stuck.active)
                 {
@@ -551,8 +555,12 @@ export class PhysicsVehicle
         this.yRotation = new THREE.Euler().setFromQuaternion(this.quaternion, 'YXZ').y
         this.zRotation = new THREE.Euler().setFromQuaternion(this.quaternion, 'ZYX').z
 
-        if(Math.abs(this.game.player.accelerating) > 0.5)
-            this.stuck.accumulate(this.velocity.length(), this.game.ticker.deltaScaled)
+        const distanceStep = this.velocity.length() * this.game.ticker.deltaScaled
+        const isTryingToDrive = Math.abs(this.game.player.accelerating) > 0.1
+        const isTiltedOrAirborne = (this.wheels.inContactCount <= 1 || Math.abs(this.upward.y) < 0.65)
+
+        if(isTryingToDrive || isTiltedOrAirborne)
+            this.stuck.accumulate(distanceStep, this.game.ticker.deltaScaled)
 
         let inContactCount = 0
         for(let i = 0; i < 4; i++)

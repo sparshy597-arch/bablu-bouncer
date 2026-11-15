@@ -328,3 +328,72 @@
                     
                     @media only screen and (max-width 520px)
                         display initial
+
+.unstuck-trigger
+    display none
+    position absolute
+    right 0
+    top 120px
+    width 44px
+    height 44px
+    z-index 9
+    user-select none
+    cursor pointer
+
+    html.is-started &
+        display block
+
+    html.input-filter-menu &
+    html.input-filter-cinematic &
+    html.input-filter-intro &
+        pointer-events none
+
+    --hover-translate 4px
+
+    html:not(.is-mode-touch) &:hover
+        .button-inner
+            transform translateX(-4px)
+            box-shadow -4px 0 15px rgba(239, 68, 68, 0.6)
+
+    .button-inner
+        position absolute
+        top 0
+        left 0
+        width calc(100% + var(--hover-translate))
+        height 100%
+        background radial-gradient(ellipse at top right, #ef4444, #7f1d1d)
+        transition transform 0.15s ease, background 0.3s ease
+        display flex
+        align-items center
+        justify-content center
+
+    .icon-container
+        display flex
+        flex-direction column
+        align-items center
+        justify-content center
+        color #ffffff
+        font-family inherit
+        font-weight 800
+        line-height 1
+
+    .unstuck-icon
+        font-size 18px
+
+    .unstuck-label
+        font-size 7px
+        letter-spacing 0.5px
+        margin-top 2px
+
+    &.is-stuck-alert
+        .button-inner
+            background radial-gradient(ellipse at top right, #f59e0b, #dc2626)
+            animation unstuck-pulse 0.8s infinite alternate
+
+@keyframes unstuck-pulse
+    0%
+        transform translateX(-2px) scale(1)
+        box-shadow 0 0 10px rgba(245, 158, 11, 0.7)
+    100%
+        transform translateX(-6px) scale(1.08)
+        box-shadow 0 0 22px rgba(239, 68, 68, 1)
