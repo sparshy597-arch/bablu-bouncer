@@ -46,39 +46,53 @@ export class Rendering
 
     async setRenderer()
     {
-        this.renderer = new THREE.WebGPURenderer({
-            canvas: this.game.canvasElement,
-            powerPreference: 'high-performance',
-            forceWebGL: false,
-            preserveDrawingBuffer: true,
-            antialias: this.game.viewport.pixelRatio < 2
-        })
-        this.renderer.setSize(this.game.viewport.width, this.game.viewport.height)
-        this.renderer.setPixelRatio(this.game.viewport.pixelRatio)
-        this.renderer.sortObjects = false
+        const urlParams = new URLSearchParams(window.location.search)
+        let forceWebGL = urlParams.get('webgl') !== null || urlParams.get('renderer') === 'webgl' || localStorage.getItem('forceWebGL') === '1'
 
-        this.renderer.domElement.classList.add('experience')
-        this.renderer.shadowMap.enabled = true
-        // this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
-        this.renderer.setOpaqueSort((a, b) =>
+        if(!forceWebGL && !navigator.gpu)
         {
-            return a.renderOrder - b.renderOrder
-        })
-        this.renderer.setTransparentSort((a, b) =>
-        {
-            return a.renderOrder - b.renderOrder
-        })
-
-        if(location.hash.match(/inspector/i))
-        {
-            this.renderer.inspector = new Inspector()
+            forceWebGL = true
         }
 
-        // Make the renderer control the ticker
-        this.renderer.setAnimationLoop((elapsedTime) => { this.game.ticker.update(elapsedTime) })
+        const buildRenderer = (useWebGL) =>
+        {
+            const r = new THREE.WebGPURenderer({
+                canvas: this.game.canvasElement,
+                powerPreference: 'high-performance',
+                forceWebGL: useWebGL,
+                preserveDrawingBuffer: true,
+                antialias: this.game.viewport.pixelRatio < 2
+            })
+            r.setSize(this.game.viewport.width, this.game.viewport.height)
+            r.setPixelRatio(this.game.viewport.pixelRatio)
+            r.sortObjects = false
+            r.domElement.classList.add('experience')
+            r.shadowMap.enabled = true
+            r.setOpaqueSort((a, b) => a.renderOrder - b.renderOrder)
+            r.setTransparentSort((a, b) => a.renderOrder - b.renderOrder)
+            if(location.hash.match(/inspector/i))
+            {
+                r.inspector = new Inspector()
+            }
+            r.setAnimationLoop((elapsedTime) => { this.game.ticker.update(elapsedTime) })
+            return r
+        }
+
+        this.renderer = buildRenderer(forceWebGL)
+
+        try
+        {
+            await this.renderer.init()
+        }
+        catch(err)
+        {
+            console.warn('WebGPU initialization error, auto-activating universal WebGL2 fallback:', err)
+            localStorage.setItem('forceWebGL', '1')
+            this.renderer = buildRenderer(true)
+            await this.renderer.init()
+        }
 
         return this.renderer
-            .init()
     }
 
     setPostprocessing()
@@ -180,8 +194,23 @@ export class Rendering
 
     async render()
     {
-        // this.renderer.render(this.game.scene, this.game.view.camera)
-        this.postProcessing.render()
+        try
+        {
+            this.postProcessing.render()
+        }
+        catch(err)
+        {
+            if(!this.hasFallenBack && (err?.message?.includes('drawIndexed') || err?.message?.includes('GPU') || err?.name === 'TypeError'))
+            {
+                this.hasFallenBack = true
+                console.warn('WebGPU driver crash caught, auto-recovering in universal WebGL2 fallback mode:', err)
+                localStorage.setItem('forceWebGL', '1')
+                const url = new URL(window.location.href)
+                url.searchParams.set('webgl', '1')
+                window.location.replace(url.href)
+                return
+            }
+        }
 
         if(this.stats)
             this.stats.update()

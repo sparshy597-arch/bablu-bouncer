@@ -41,10 +41,8 @@ export class MonsterCar
 
         // Heavy armored monster chassis (1.5x scale)
         const bodyGeo = new THREE.BoxGeometry(2.6, 1.4, 4.4)
-        const bodyMat = new THREE.MeshStandardMaterial({
-            color: 0x111116,
-            roughness: 0.35,
-            metalness: 0.85
+        const bodyMat = new THREE.MeshLambertNodeMaterial({
+            color: 0x111116
         })
         const body = new THREE.Mesh(bodyGeo, bodyMat)
         body.position.y = 1.45
@@ -53,10 +51,8 @@ export class MonsterCar
 
         // Armored Cabin with dark tint
         const cabGeo = new THREE.BoxGeometry(2.0, 1.1, 2.3)
-        const cabMat = new THREE.MeshStandardMaterial({
-            color: 0x07070a,
-            roughness: 0.15,
-            metalness: 0.95
+        const cabMat = new THREE.MeshLambertNodeMaterial({
+            color: 0x07070a
         })
         const cab = new THREE.Mesh(cabGeo, cabMat)
         cab.position.set(0, 2.45, -0.3)
@@ -66,7 +62,7 @@ export class MonsterCar
         // 4 Giant Monster Truck Knobby Wheels
         const wheelGeo = new THREE.CylinderGeometry(0.95, 0.95, 0.8, 16)
         wheelGeo.rotateZ(Math.PI / 2)
-        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x18181f, roughness: 0.9 })
+        const wheelMat = new THREE.MeshLambertNodeMaterial({ color: 0x18181f })
 
         const wheelPositions = [
             [-1.6, 0.95, 1.5],
@@ -81,32 +77,20 @@ export class MonsterCar
             this.model.add(wheel)
         })
 
-        // Glowing Crimson Red Evil Headlights
+        // Glowing Evil Headlights
         const eyeGeo = new THREE.SphereGeometry(0.24, 8, 8)
-        const eyeMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(this.colorHex) })
+        const eyeMat = new THREE.MeshBasicNodeMaterial({ color: new THREE.Color(this.colorHex) })
 
-        const leftEye = new THREE.Mesh(eyeGeo, eyeMat)
-        leftEye.position.set(-0.75, 1.5, 2.25)
-        this.model.add(leftEye)
+        this.leftEye = new THREE.Mesh(eyeGeo, eyeMat)
+        this.leftEye.position.set(-0.75, 1.5, 2.25)
+        this.model.add(this.leftEye)
 
-        const rightEye = new THREE.Mesh(eyeGeo, eyeMat)
-        rightEye.position.set(0.75, 1.5, 2.25)
-        this.model.add(rightEye)
-
-        // Glowing Underglow
-        const glowGeo = new THREE.PlaneGeometry(3.4, 5.2)
-        glowGeo.rotateX(-Math.PI / 2)
-        const glowMat = new THREE.MeshBasicMaterial({
-            color: new THREE.Color(this.colorHex),
-            transparent: true,
-            opacity: 0.5,
-            depthWrite: false
-        })
-        this.underglow = new THREE.Mesh(glowGeo, glowMat)
-        this.underglow.position.y = 0.15
-        this.group.add(this.underglow)
+        this.rightEye = new THREE.Mesh(eyeGeo, eyeMat)
+        this.rightEye.position.set(0.75, 1.5, 2.25)
+        this.model.add(this.rightEye)
 
         this.group.add(this.model)
+        this.game.materials.updateObject(this.group)
         this.game.scene.add(this.group)
     }
 
@@ -153,7 +137,8 @@ export class MonsterCar
             {
                 this.state = 'HUNT'
                 this.speed = this.baseSpeed * 1.25 // Turbo speed in hunt mode
-                this.underglow.material.opacity = 0.85
+                if(this.leftEye?.material) this.leftEye.material.color.set('#ff0000')
+                if(this.rightEye?.material) this.rightEye.material.color.set('#ff0000')
                 this.manager.onMonsterAggro(this, distance)
             }
             this.target.set(playerPosition.x, 0, playerPosition.z)
@@ -164,7 +149,8 @@ export class MonsterCar
             {
                 this.state = 'PATROL'
                 this.speed = this.baseSpeed
-                this.underglow.material.opacity = 0.45
+                if(this.leftEye?.material) this.leftEye.material.color.set(this.colorHex)
+                if(this.rightEye?.material) this.rightEye.material.color.set(this.colorHex)
             }
 
             // Patrol path around center
