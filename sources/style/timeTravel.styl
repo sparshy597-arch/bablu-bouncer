@@ -1,0 +1,100 @@
+.time-travel-trigger
+    display none
+    position absolute
+    right 0
+    top 120px
+    width 44px
+    height 44px
+    z-index 9
+    -webkit-user-select none
+    -moz-user-select none
+    user-select none
+    cursor pointer
+
+    html.is-started &
+        display block
+
+    html.input-filter-menu &
+    html.input-filter-modal &
+    html.input-filter-cinematic &
+    html.input-filter-intro &
+        pointer-events none
+
+    --hover-translate 4px
+
+    html:not(.is-mode-touch) &:hover
+        .button-inner
+            transform translateX(-4px)
+
+            &::after
+                opacity 0.8
+
+            .icon-container
+                opacity 1
+
+    .button-inner
+        position absolute
+        top 0
+        left 0
+        width calc(100% + var(--hover-translate))
+        height 100%
+        background radial-gradient(ellipse at top right, #3A7BD5, #00D2FF)
+        transition transform 0.15s 0.15s
+        border-radius 8px 0 0 8px
+        display flex
+        align-items center
+        justify-content center
+        box-shadow 0 4px 15px rgba(0, 210, 255, 0.3)
+
+        &::after
+            content ''
+            position absolute
+            top -2px
+            bottom -2px
+            left -2px
+            right 0
+            border 2px solid #00D2FF
+            border-right none
+            border-radius 8px 0 0 8px
+            opacity 0.4
+            transition opacity 0.15s
+
+        .icon-container
+            position relative
+            width 24px
+            height 24px
+            display flex
+            align-items center
+            justify-content center
+            opacity 0.95
+            transition opacity 0.15s
+
+            .time-travel-icon
+                font-size 20px
+                line-height 1
+                filter drop-shadow(0 2px 4px rgba(0,0,0,0.5))
+
+.time-travel-toast
+    position fixed
+    bottom 32px
+    left 50%
+    transform translateX(-50%) translateY(20px)
+    background rgba(15, 23, 42, 0.88)
+    backdrop-filter blur(12px)
+    color #ffffff
+    padding 12px 24px
+    border-radius 9999px
+    border 1px solid rgba(0, 210, 255, 0.4)
+    box-shadow 0 8px 32px rgba(0, 210, 255, 0.25), 0 2px 8px rgba(0, 0, 0, 0.5)
+    font-family Nunito, -apple-system, BlinkMacSystemFont, sans-serif
+    font-size 15px
+    font-weight 700
+    letter-spacing 0.03em
+    pointer-events none
+    z-index 9999
+    opacity 0
+    transition opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)
+
+    &.is-active
+        opacity 1
+        transform translateX(-50%) translateY(0)
