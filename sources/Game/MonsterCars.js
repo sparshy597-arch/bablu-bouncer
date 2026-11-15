@@ -25,7 +25,7 @@ export class MonsterCar
         this.target = new THREE.Vector3()
 
         this.chaseDistance = 24
-        this.killDistance = 2.8
+        this.killDistance = 3.2
         this.evadeCooldown = 0
 
         this.setMesh()
@@ -36,61 +36,228 @@ export class MonsterCar
         this.group = new THREE.Group()
         this.group.position.copy(this.position)
 
-        // Procedural stylized massive Monster Truck
         this.model = new THREE.Group()
+        this.carWrapper = new THREE.Group()
+        // Rotate so car front (+X) aligns with MonsterCar forward direction (+Z)
+        this.carWrapper.rotation.y = -Math.PI / 2
+        this.model.add(this.carWrapper)
 
-        // Heavy armored monster chassis (1.5x scale)
-        const bodyGeo = new THREE.BoxGeometry(2.6, 1.4, 4.4)
-        const bodyMat = new THREE.MeshLambertNodeMaterial({
-            color: 0x111116
-        })
-        const body = new THREE.Mesh(bodyGeo, bodyMat)
-        body.position.y = 1.45
-        body.castShadow = true
-        this.model.add(body)
+        const visualVehicle = this.game.world?.visualVehicle
 
-        // Armored Cabin with dark tint
-        const cabGeo = new THREE.BoxGeometry(2.0, 1.1, 2.3)
-        const cabMat = new THREE.MeshLambertNodeMaterial({
-            color: 0x07070a
-        })
-        const cab = new THREE.Mesh(cabGeo, cabMat)
-        cab.position.set(0, 2.45, -0.3)
-        cab.castShadow = true
-        this.model.add(cab)
+        // 1. CHASSIS BODY (Cloned from player car, scaled up and customized)
+        let chassis = null
+        if(visualVehicle?.parts?.chassis)
+        {
+            chassis = visualVehicle.parts.chassis.clone(true)
+            
+            // Clean up player-specific elements (player wheels and boost trails)
+            for(let i = chassis.children.length - 1; i >= 0; i--)
+            {
+                const child = chassis.children[i]
+                if(child.name.match(/^wheelContainer/i) || child.name.match(/^boost/i))
+                {
+                    chassis.remove(child)
+                }
+            }
+        }
 
-        // 4 Giant Monster Truck Knobby Wheels
-        const wheelGeo = new THREE.CylinderGeometry(0.95, 0.95, 0.8, 16)
-        wheelGeo.rotateZ(Math.PI / 2)
-        const wheelMat = new THREE.MeshLambertNodeMaterial({ color: 0x18181f })
+        // Custom menacing monster paint for this monster truck
+        const monsterPaint = this.game.materials.createGradient(
+            `monsterPaint_${this.name}`,
+            '#0f0f15', // obsidian charcoal armor
+            this.colorHex === '#ef4444' ? '#780d0d' : '#3d0d57' // deep sinister blood crimson or shadow violet
+        )
+        monsterPaint.userData = { prevent: true }
 
-        const wheelPositions = [
-            [-1.6, 0.95, 1.5],
-            [1.6, 0.95, 1.5],
-            [-1.6, 0.95, -1.5],
-            [1.6, 0.95, -1.5]
+        if(chassis)
+        {
+            chassis.traverse((child) =>
+            {
+                if(child.isMesh)
+                {
+                    child.castShadow = true
+                    child.receiveShadow = true
+                    if(child.material)
+                    {
+                        child.material.userData = { prevent: true }
+                    }
+
+                    // Re-paint the car body panels
+                    if(child.name.match(/^bodyPainted/i))
+                    {
+                        child.material = monsterPaint
+                    }
+                    // Tint energy cells to fiery monster glow
+                    else if(child.name.match(/^energy/i) || child.name.match(/^cell/i))
+                    {
+                        child.material = this.game.materials.getFromName('emissiveOrangeRadialGradient')
+                    }
+                }
+            })
+
+            // Massive lifted monster truck chassis
+            chassis.scale.set(1.4, 1.45, 1.4)
+            chassis.position.set(0, 1.35, 0)
+            this.carWrapper.add(chassis)
+            this.chassisMesh = chassis
+        }
+        else
+        {
+            // Resilient procedural armored cabin fallback
+            const fallbackGeo = new THREE.BoxGeometry(3.6, 1.8, 2.2)
+            const fallbackMat = new THREE.MeshLambertNodeMaterial({ color: 0x141419, userData: { prevent: true } })
+            const fbMesh = new THREE.Mesh(fallbackGeo, fallbackMat)
+            fbMesh.position.y = 1.4
+            fbMesh.castShadow = true
+            this.carWrapper.add(fbMesh)
+        }
+
+        // 2. 4 GIANT LIFTED MONSTER TRUCK WHEELS
+        this.wheels = []
+        const wheelContainer = visualVehicle?.parts?.wheelContainer
+
+        // Monster truck wheel positions in local car space (front: +X, rear: -X, sides: ±Z)
+        const wheelConfigs = [
+            { x: 1.35, y: 0.95, z: 1.45, isFront: true, isLeft: true },
+            { x: 1.35, y: 0.95, z: -1.45, isFront: true, isLeft: false },
+            { x: -1.35, y: 0.95, z: 1.45, isFront: false, isLeft: true },
+            { x: -1.35, y: 0.95, z: -1.45, isFront: false, isLeft: false }
         ]
-        wheelPositions.forEach(pos => {
-            const wheel = new THREE.Mesh(wheelGeo, wheelMat)
-            wheel.position.set(...pos)
-            wheel.castShadow = true
-            this.model.add(wheel)
+
+        wheelConfigs.forEach((cfg) =>
+        {
+            let wheelObj = null
+            let cylinderMesh = null
+
+            if(wheelContainer)
+            {
+                wheelObj = wheelContainer.clone(true)
+                wheelObj.scale.set(2.35, 2.35, 2.35)
+
+                wheelObj.traverse((child) =>
+                {
+                    if(child.name.match(/^wheelCylinder/i))
+                        cylinderMesh = child
+                    if(child.isMesh)
+                    {
+                        child.castShadow = true
+                        child.receiveShadow = true
+                        if(child.material)
+                        {
+                            child.material.userData = { prevent: true }
+                        }
+                        if(child.name.match(/^wheelPainted/i))
+                        {
+                            child.material = monsterPaint
+                        }
+                    }
+                })
+
+                if(!cfg.isLeft)
+                    wheelObj.rotation.y = Math.PI
+            }
+            else
+            {
+                const geo = new THREE.CylinderGeometry(0.95, 0.95, 0.85, 16)
+                geo.rotateZ(Math.PI / 2)
+                const mat = new THREE.MeshLambertNodeMaterial({ color: 0x18181f, userData: { prevent: true } })
+                wheelObj = new THREE.Mesh(geo, mat)
+                cylinderMesh = wheelObj
+            }
+
+            wheelObj.position.set(cfg.x, cfg.y, cfg.z)
+            this.carWrapper.add(wheelObj)
+
+            this.wheels.push({
+                obj: wheelObj,
+                cylinder: cylinderMesh,
+                isLeft: cfg.isLeft
+            })
+
+            // Heavy duty suspension shock absorber strut connecting chassis down to axle
+            const strutGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.7, 8)
+            const strutMat = new THREE.MeshLambertNodeMaterial({ color: 0x22222a, userData: { prevent: true } })
+            const strut = new THREE.Mesh(strutGeo, strutMat)
+            strut.position.set(cfg.x * 0.85, 1.25, cfg.z * 0.65)
+            strut.castShadow = true
+            this.carWrapper.add(strut)
         })
 
-        // Glowing Evil Headlights
-        const eyeGeo = new THREE.SphereGeometry(0.24, 8, 8)
-        const eyeMat = new THREE.MeshBasicNodeMaterial({ color: new THREE.Color(this.colorHex) })
+        // 3. HEAVY DUTY FRONT BULLBAR / RAMMING PUSH-BUMPER
+        const steelMat = new THREE.MeshLambertNodeMaterial({ color: 0x16161d, userData: { prevent: true } })
+        
+        // Front bumper beam
+        const bumperBarGeo = new THREE.BoxGeometry(0.25, 0.45, 2.2)
+        const bumperBar = new THREE.Mesh(bumperBarGeo, steelMat)
+        bumperBar.position.set(2.15, 1.15, 0)
+        bumperBar.castShadow = true
+        this.carWrapper.add(bumperBar)
+
+        // Push horns (left & right)
+        const hornGeo = new THREE.BoxGeometry(0.3, 0.8, 0.22)
+        const leftHorn = new THREE.Mesh(hornGeo, steelMat)
+        leftHorn.position.set(2.2, 1.35, 0.65)
+        leftHorn.castShadow = true
+        this.carWrapper.add(leftHorn)
+
+        const rightHorn = new THREE.Mesh(hornGeo, steelMat)
+        rightHorn.position.set(2.2, 1.35, -0.65)
+        rightHorn.castShadow = true
+        this.carWrapper.add(rightHorn)
+
+        // 4. ROOF ROLLCAGE / OFFROAD LIGHTBAR
+        const lightbarFrameGeo = new THREE.BoxGeometry(0.2, 0.1, 1.8)
+        const lightbarFrame = new THREE.Mesh(lightbarFrameGeo, steelMat)
+        lightbarFrame.position.set(-0.15, 2.5, 0)
+        lightbarFrame.castShadow = true
+        this.carWrapper.add(lightbarFrame)
+
+        const floodlightMat = new THREE.MeshBasicNodeMaterial({
+            color: new THREE.Color(0xffaa00),
+            userData: { prevent: true }
+        })
+        const floodlightGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.15, 8)
+        floodlightGeo.rotateZ(Math.PI / 2)
+
+        const lightZPositions = [-0.65, -0.22, 0.22, 0.65]
+        lightZPositions.forEach(zPos => {
+            const lamp = new THREE.Mesh(floodlightGeo, floodlightMat)
+            lamp.position.set(-0.12, 2.62, zPos)
+            this.carWrapper.add(lamp)
+        })
+
+        // 5. DUAL MONSTER TRUCK EXHAUST CHIMNEYS / STACKS
+        const exhaustGeo = new THREE.CylinderGeometry(0.09, 0.11, 1.1, 8)
+        const exhaustMat = new THREE.MeshLambertNodeMaterial({ color: 0x2a2a35, userData: { prevent: true } })
+
+        const leftExhaust = new THREE.Mesh(exhaustGeo, exhaustMat)
+        leftExhaust.position.set(-1.15, 1.8, 0.75)
+        leftExhaust.rotation.z = -0.12
+        leftExhaust.castShadow = true
+        this.carWrapper.add(leftExhaust)
+
+        const rightExhaust = new THREE.Mesh(exhaustGeo, exhaustMat)
+        rightExhaust.position.set(-1.15, 1.8, -0.75)
+        rightExhaust.rotation.z = -0.12
+        rightExhaust.castShadow = true
+        this.carWrapper.add(rightExhaust)
+
+        // 6. EVIL GLOWING HEADLIGHTS / PREDATOR EYES
+        const eyeGeo = new THREE.SphereGeometry(0.24, 12, 12)
+        const eyeMat = new THREE.MeshBasicNodeMaterial({
+            color: new THREE.Color(this.colorHex),
+            userData: { prevent: true }
+        })
 
         this.leftEye = new THREE.Mesh(eyeGeo, eyeMat)
-        this.leftEye.position.set(-0.75, 1.5, 2.25)
-        this.model.add(this.leftEye)
+        this.leftEye.position.set(2.1, 1.45, 0.65)
+        this.carWrapper.add(this.leftEye)
 
         this.rightEye = new THREE.Mesh(eyeGeo, eyeMat)
-        this.rightEye.position.set(0.75, 1.5, 2.25)
-        this.model.add(this.rightEye)
+        this.rightEye.position.set(2.1, 1.45, -0.65)
+        this.carWrapper.add(this.rightEye)
 
         this.group.add(this.model)
-        this.game.materials.updateObject(this.group)
         this.game.scene.add(this.group)
     }
 
@@ -175,6 +342,23 @@ export class MonsterCar
         this.position.x += Math.sin(this.rotationY) * moveDist
         this.position.z += Math.cos(this.rotationY) * moveDist
 
+        // Rotate giant wheels as monster moves
+        if(this.wheels && this.wheels.length > 0)
+        {
+            const wheelRadius = 0.95
+            const rollAngle = (moveDist / wheelRadius) * 1.5
+            for(const w of this.wheels)
+            {
+                if(w.cylinder)
+                {
+                    if(w.isLeft)
+                        w.cylinder.rotation.z += rollAngle
+                    else
+                        w.cylinder.rotation.z -= rollAngle
+                }
+            }
+        }
+
         // Ground elevation sampling
         if(this.game.world?.floor?.getElevation)
         {
@@ -184,15 +368,15 @@ export class MonsterCar
         this.group.position.copy(this.position)
 
         // Suspension bobbing
-        this.model.rotation.x = Math.sin(Date.now() * 0.01) * 0.05
-        this.model.rotation.z = Math.cos(Date.now() * 0.01) * 0.04
+        this.model.rotation.x = Math.sin(Date.now() * 0.012) * 0.04
+        this.model.rotation.z = Math.cos(Date.now() * 0.012) * 0.03
 
         // Collision Check with Player
         if(distance < this.killDistance)
         {
             const playerY = playerPosition.y || 0
             const monsterY = this.position.y || 0
-            if(playerY > monsterY + 1.6)
+            if(playerY > monsterY + 1.8)
             {
                 // Player jumped over monster truck!
                 if(this.evadeCooldown <= 0)
