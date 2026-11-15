@@ -1,14 +1,17 @@
-# SPARSH - 3D Open World Driving Game & Portfolio
+# Bablu Bouncer - 3D Open World Driving Game
+
+> **Created by Sparsh and Divydev** for the Hackathon (Theme: *Bounce Back*).
 
 An interactive, high-performance 3D driving exploration game built for the modern web browser using **Three.js (WebGPU/WebGL)**, **Rapier Physics (WASM)**, and **Vite**.
 
-Drive an agile vehicle across a stylized floating island, conquer high-speed racetracks, knock down giant bowling pins, bake cookies in a colossal oven, trigger ancient cataclysms at the dark altar, unlock over 25 unique achievements, and even **time travel 5 seconds back in time** when you make a mistake!
+Drive an agile vehicle across a stylized floating island, survive menacing monster cars, conquer high-speed racetracks, knock down giant bowling pins, bake cookies in a colossal oven, trigger ancient cataclysms at the dark altar, unlock over 25 unique achievements, and even **time travel 5 seconds back in time** when you make a mistake!
 
 ---
 
 ## 📖 The Story & Concept
 
-You awaken as the driver of an exploratory vehicle in the surreal world of **SPARSH**.
+You awaken as the driver in the surreal world of **Bablu Bouncer**.
+Every crash, collision, and setback is an opportunity to bounce back stronger!
 
 The floating world is filled with curious landmarks, forgotten structures, and chaotic interactive physics playgrounds:
 - An ancient **Landing Sanctuary** with an eternal bonfire (inspired by the bonfires of Dark Souls and Elden Ring) that allows you to reset reality whenever the world has fallen into chaos.

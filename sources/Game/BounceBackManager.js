@@ -14,7 +14,7 @@ export class BounceBackManager
         this.overallText = document.querySelector('.js-bounce-overall-text')
         this.overallFill = document.querySelector('.js-bounce-overall-fill')
 
-        if(!this.modal || !this.trigger)
+        if(!this.modal)
             return
 
         this.setEvents()
@@ -33,7 +33,7 @@ export class BounceBackManager
 
     setEvents()
     {
-        this.trigger.addEventListener('click', () =>
+        this.trigger?.addEventListener('click', () =>
         {
             this.open()
         })
@@ -52,7 +52,9 @@ export class BounceBackManager
         window.addEventListener('keydown', (e) =>
         {
             if(e.key === 'Escape' && this.modal.classList.contains('is-open'))
+            {
                 this.close()
+            }
         })
     }
 

@@ -465,7 +465,24 @@ export class PhysicsVehicle
         let brake = this.game.player.braking
 
         if(!this.game.player.braking && Math.abs(this.game.player.accelerating) < 0.1)
-            brake = this.idleBrake
+        {
+            if(this.xzSpeed < 0.35)
+            {
+                brake = 3.0
+                const body = this.chassis?.physical?.body
+                if(body)
+                {
+                    const linvel = body.linvel()
+                    const angvel = body.angvel()
+                    body.setLinvel({ x: linvel.x * 0.7, y: Math.min(0, linvel.y), z: linvel.z * 0.7 }, true)
+                    body.setAngvel({ x: angvel.x * 0.7, y: angvel.y * 0.7, z: angvel.z * 0.7 }, true)
+                }
+            }
+            else
+            {
+                brake = this.idleBrake
+            }
+        }
     
         if(
             this.speed > 0.5 &&

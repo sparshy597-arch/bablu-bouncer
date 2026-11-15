@@ -57,6 +57,14 @@ export class Lightnings
         this.setArc()
         this.setExplosionParticles()
 
+        window.addEventListener('keydown', (e) =>
+        {
+            if((e.key === 'l' || e.key === 'L') && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName))
+            {
+                this.strikeNearCar()
+            }
+        })
+
         this.game.ticker.events.on('tick', () =>
         {
             this.update()
@@ -489,5 +497,27 @@ export class Lightnings
                 }
             }
         }
+    }
+
+    strikeNearCar()
+    {
+        const position = this.game.player?.chassis?.body?.translation() || this.game.view.focusPoint.position
+        const offsetDist = 4 + Math.random() * 5
+        const angle = Math.random() * Math.PI * 2
+        const target = new THREE.Vector3(
+            position.x + Math.cos(angle) * offsetDist,
+            0,
+            position.z + Math.sin(angle) * offsetDist
+        )
+
+        if(this.game.weather)
+        {
+            this.game.weather.clouds.value = 0.95
+            this.game.weather.electricField.value = 0.98
+            this.game.weather.humidity.value = 0.9
+        }
+
+        const rng = alea(Date.now())
+        this.create(target, rng)
     }
 }

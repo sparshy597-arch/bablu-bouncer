@@ -1,26 +1,9 @@
-# Dependencies
-node_modules/
-
-# Production build
-dist/
-
-# OS and editor files
 .DS_Store
-Thumbs.db
-.vscode/
-.idea/
-.VSCodeCounter
-
-# Logs & temp
-*.log
-.autosave
+node_modules
+dist
 .vercel
-
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Raw large files
-resources/
-*.wav
+.VSCodeCounter
+.env*
+.autosave
+.wav
+!static/sounds/music/*.wav

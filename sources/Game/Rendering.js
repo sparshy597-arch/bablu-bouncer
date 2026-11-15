@@ -33,6 +33,15 @@ export class Rendering
         {
             this.resize()
         })
+
+        // Screenshot shortcut: Press 'P' key anytime to capture a cinematic shot
+        window.addEventListener('keydown', (e) =>
+        {
+            if((e.key === 'p' || e.key === 'P') && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName))
+            {
+                this.requestScreenshot()
+            }
+        })
     }
 
     async setRenderer()
@@ -41,6 +50,7 @@ export class Rendering
             canvas: this.game.canvasElement,
             powerPreference: 'high-performance',
             forceWebGL: false,
+            preserveDrawingBuffer: true,
             antialias: this.game.viewport.pixelRatio < 2
         })
         this.renderer.setSize(this.game.viewport.width, this.game.viewport.height)
@@ -181,5 +191,45 @@ export class Rendering
             this.game.rendering.renderer.resolveTimestampsAsync(THREE.TimestampQuery.RENDER)
             this.game.monitoring.stats.update()
         }
+
+        if(this.pendingScreenshot)
+        {
+            const filename = typeof this.pendingScreenshot === 'string' ? this.pendingScreenshot : `cinematic-${Date.now()}.png`
+            this.pendingScreenshot = null
+            try
+            {
+                const canvas = this.game.canvasElement
+                const link = document.createElement('a')
+                link.download = filename
+                link.href = canvas.toDataURL('image/png')
+                link.click()
+                this.showScreenshotToast()
+            }
+            catch(err)
+            {
+                console.warn('Screenshot error:', err)
+            }
+        }
+    }
+
+    requestScreenshot(filename)
+    {
+        this.pendingScreenshot = filename || `sparsh-cinematic-${Date.now()}.png`
+    }
+
+    showScreenshotToast()
+    {
+        let toast = document.querySelector('.js-screenshot-toast')
+        if(!toast)
+        {
+            toast = document.createElement('div')
+            toast.className = 'js-screenshot-toast'
+            toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.92);color:#38bdf8;padding:12px 24px;border-radius:999px;font-family:sans-serif;font-weight:700;font-size:14px;box-shadow:0 10px 25px rgba(0,0,0,0.5);border:1px solid rgba(56,189,248,0.5);z-index:99999;pointer-events:none;transition:opacity 0.3s ease;'
+            document.body.appendChild(toast)
+        }
+        toast.textContent = '📸 Cinematic Screenshot Saved!'
+        toast.style.opacity = '1'
+        clearTimeout(this.toastTimeout)
+        this.toastTimeout = setTimeout(() => { toast.style.opacity = '0' }, 2200)
     }
 }

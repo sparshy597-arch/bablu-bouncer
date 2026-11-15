@@ -1,6 +1,6 @@
 {
-  "name": "sparsh",
-  "version": "0.0.0",
+  "name": "bablu-bouncer",
+  "version": "1.0.0",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -9,9 +9,9 @@
     "preview": "vite preview",
     "compress": "node scripts/compress.js static/"
   },
-  "author": "",
+  "author": "Sparsh & Divydev",
   "license": "MIT",
-  "description": "",
+  "description": "Bablu Bouncer - 3D Driving Game made by Sparsh and Divydev",
   "dependencies": {
     "@dimforge/rapier3d": "^0.19.3",
     "@gltf-transform/cli": "^4.1.0",
@@ -29,6 +29,7 @@
     "howler": "^2.2.4",
     "msgpack-lite": "^0.2.2",
     "normalize-wheel": "^1.0.1",
+    "puppeteer-core": "^24.43.1",
     "seedrandom": "^3.0.5",
     "sharp": "^0.34.5",
     "stats-gl": "^4.2.3",

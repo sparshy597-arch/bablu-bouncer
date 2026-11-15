@@ -85,7 +85,7 @@ export class Title
             }
 
             
-            document.title = 'SPARSH' + title.join('')
+            document.title = 'Bablu Bouncer ' + title.join('')
         }
     }
 }
