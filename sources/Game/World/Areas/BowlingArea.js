@@ -360,6 +360,7 @@ export class BowlingArea extends Area
         this.bumpers.toggle = () =>
         {
             this.bumpers.active = !this.bumpers.active
+            this.game.achievements.addProgress('bounceBumpers', 1)
 
             const progress = this.bumpers.active ? 1 : 0
             gsap.to(

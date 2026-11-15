@@ -305,6 +305,8 @@ export class Player
 
         this.game.inputs.events.on('suspensions', () =>
         {
+            this.game.achievements.addProgress('bounceHydraulics', 1)
+
             if(this.game.inputs.mode === Inputs.MODE_TOUCH)
                 this.game.inputs.nipple.jump()
         })
@@ -377,7 +379,10 @@ export class Player
 
                     // Achievement
                     if(this.game.physicalVehicle.upsideDown.ratio > 0.75)
+                    {
                         this.game.achievements.setProgress('upsideDown', 1)
+                        this.game.achievements.addProgress('bounceUnstuck', 1)
+                    }
 
                     // Again in case it didn't work
                     waitAndTest()
@@ -452,6 +457,8 @@ export class Player
                 this.game.achievements.setProgress('frontFlip', 1)
             else
                 this.game.achievements.setProgress('backFlip', 1)
+
+            this.game.achievements.addProgress('bounceFlip', 1)
         })
     }
 
@@ -487,6 +494,7 @@ export class Player
             
             this.state = Player.STATE_DEFAULT
             this.game.overlay.hide()
+            this.game.achievements.addProgress('bounceRespawn', 1)
         })
     }
 
@@ -595,6 +603,7 @@ export class Player
             }
 
             this.showTimeTravelFeedback(seconds)
+            this.game.achievements.addProgress('bounceTimeTravel', 1)
         }
     }
 

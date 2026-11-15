@@ -223,6 +223,7 @@ export class LandingArea extends Area
             () =>
             {
                 this.game.reset()
+                this.game.achievements.setProgress('bounceBonfire', 1)
 
                 gsap.delayedCall(2, () =>
                 {

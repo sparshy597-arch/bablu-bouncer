@@ -1,5 +1,10 @@
+import { bounceBackMissions } from './bounceBackMissions.js'
+
+const bounceBackEntries = bounceBackMissions.map(m => [ m.id, `Bounce Back: ${m.title}`, m.description, m.target ])
+
 export default
 [
+    ...bounceBackEntries,
     [
         'landingLeave',
         'I’m going on an adventure!',

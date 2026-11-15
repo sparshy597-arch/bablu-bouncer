@@ -1,0 +1,268 @@
+.bounce-back-trigger
+    display none
+    position absolute
+    right 0
+    top 170px
+    width 44px
+    height 44px
+    z-index 9
+    -webkit-user-select none
+    -moz-user-select none
+    user-select none
+    cursor pointer
+
+    html.is-started &
+        display block
+
+    html.input-filter-menu &
+    html.input-filter-modal &
+    html.input-filter-cinematic &
+    html.input-filter-intro &
+        pointer-events none
+
+    --hover-translate 4px
+
+    html:not(.is-mode-touch) &:hover
+        .button-inner
+            transform translateX(-4px)
+
+            &::after
+                opacity 0.8
+
+            .icon-container
+                opacity 1
+
+    .button-inner
+        position absolute
+        top 0
+        left 0
+        width calc(100% + var(--hover-translate))
+        height 100%
+        background radial-gradient(ellipse at top right, #F59E0B, #EF4444)
+        transition transform 0.15s 0.15s
+        border-radius 8px 0 0 8px
+        display flex
+        align-items center
+        justify-content center
+        box-shadow 0 4px 15px rgba(245, 158, 11, 0.4)
+
+        &::after
+            content ''
+            position absolute
+            top -2px
+            bottom -2px
+            left -2px
+            right 0
+            border 2px solid #F59E0B
+            border-right none
+            border-radius 8px 0 0 8px
+            opacity 0.4
+            transition opacity 0.15s
+
+        .icon-container
+            position relative
+            width 24px
+            height 24px
+            display flex
+            align-items center
+            justify-content center
+            opacity 0.95
+            transition opacity 0.15s
+
+            .bounce-back-icon
+                font-size 20px
+                line-height 1
+                filter drop-shadow(0 2px 4px rgba(0,0,0,0.5))
+
+.bounce-back-modal
+    display none
+    position fixed
+    top 0
+    left 0
+    width 100vw
+    height 100vh
+    background rgba(10, 15, 30, 0.85)
+    backdrop-filter blur(16px)
+    z-index 9999
+    align-items center
+    justify-content center
+    padding 20px
+    box-sizing border-box
+
+    &.is-open
+        display flex
+
+    .modal-container
+        position relative
+        background linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98))
+        border 2px solid rgba(245, 158, 11, 0.5)
+        border-radius 20px
+        width 100%
+        max-width 640px
+        max-height 85vh
+        overflow-y auto
+        padding 28px
+        box-shadow 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(245, 158, 11, 0.2)
+        color #ffffff
+        font-family Nunito, -apple-system, BlinkMacSystemFont, sans-serif
+
+    .modal-header
+        display flex
+        align-items flex-start
+        justify-content space-between
+        border-bottom 1px solid rgba(255, 255, 255, 0.1)
+        padding-bottom 16px
+        margin-bottom 20px
+
+        .header-title
+            display flex
+            align-items center
+            gap 12px
+
+            .badge
+                background linear-gradient(90deg, #F59E0B, #EF4444)
+                color #000000
+                font-weight 900
+                font-size 11px
+                letter-spacing 0.08em
+                padding 4px 10px
+                border-radius 999px
+                text-transform uppercase
+
+            h2
+                margin 0
+                font-size 24px
+                font-weight 900
+                color #ffffff
+                letter-spacing 0.02em
+
+        .header-subtitle
+            margin 6px 0 0 0
+            font-size 13px
+            color #94A3B8
+
+        .modal-close
+            background rgba(255, 255, 255, 0.1)
+            border none
+            color #ffffff
+            width 36px
+            height 36px
+            border-radius 50%
+            cursor pointer
+            display flex
+            align-items center
+            justify-content center
+            font-size 18px
+            font-weight bold
+            transition background 0.15s
+
+            &:hover
+                background rgba(239, 68, 68, 0.6)
+
+    .overall-card
+        background rgba(245, 158, 11, 0.1)
+        border 1px solid rgba(245, 158, 11, 0.3)
+        border-radius 12px
+        padding 16px
+        margin-bottom 20px
+        display flex
+        flex-direction column
+        gap 8px
+
+        .overall-top
+            display flex
+            justify-content space-between
+            font-size 14px
+            font-weight 700
+            color #FDE68A
+
+        .overall-bar-bg
+            width 100%
+            height 10px
+            background rgba(0, 0, 0, 0.5)
+            border-radius 999px
+            overflow hidden
+
+        .overall-bar-fill
+            height 100%
+            background linear-gradient(90deg, #F59E0B, #10B981)
+            width 0%
+            transition width 0.4s ease
+
+    .missions-grid
+        display flex
+        flex-direction column
+        gap 12px
+
+    .mission-card
+        background rgba(255, 255, 255, 0.04)
+        border 1px solid rgba(255, 255, 255, 0.08)
+        border-radius 14px
+        padding 14px 16px
+        display flex
+        align-items center
+        gap 14px
+        transition transform 0.15s, border-color 0.15s
+
+        &:hover
+            border-color rgba(245, 158, 11, 0.4)
+            transform translateX(4px)
+
+        &.is-completed
+            background rgba(16, 185, 129, 0.1)
+            border-color rgba(16, 185, 129, 0.4)
+
+        .mission-icon
+            font-size 26px
+            line-height 1
+            min-width 36px
+            text-align center
+
+        .mission-info
+            flex 1
+
+            .mission-title-row
+                display flex
+                justify-content space-between
+                align-items center
+                margin-bottom 4px
+
+                .mission-title
+                    font-size 15px
+                    font-weight 800
+                    color #ffffff
+
+                .mission-count
+                    font-size 13px
+                    font-weight 700
+                    color #F59E0B
+
+            .mission-desc
+                font-size 12px
+                color #94A3B8
+                line-height 1.4
+
+            .mission-bar-bg
+                margin-top 8px
+                width 100%
+                height 6px
+                background rgba(0, 0, 0, 0.4)
+                border-radius 999px
+                overflow hidden
+
+            .mission-bar-fill
+                height 100%
+                background #F59E0B
+                width 0%
+                transition width 0.3s ease
+
+        .mission-check
+            font-size 20px
+            color #10B981
+            display none
+
+        &.is-completed .mission-check
+            display block
+
+        &.is-completed .mission-info .mission-bar-fill
+            background #10B981

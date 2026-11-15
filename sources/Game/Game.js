@@ -43,6 +43,7 @@ import { Achievements } from './Achievements.js'
 import { Notifications } from './Notifications.js'
 import { Quality } from './Quality.js'
 import { Menu } from './Menu.js'
+import { BounceBackManager } from './BounceBackManager.js'
 import { Title } from './Title.js'
 import { PreRenderer } from './PreRenderer.js'
 import { Options } from './Options.js'
@@ -184,6 +185,7 @@ export class Game
         this.interactivePoints = new InteractivePoints()
         this.konamiCode = new KonamiCode()
         this.achievements = new Achievements()
+        this.bounceBackManager = new BounceBackManager()
         this.tornado = new Tornado()
         this.map = new Map()
         this.title = new Title()
